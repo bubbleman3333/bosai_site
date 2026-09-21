@@ -4,7 +4,7 @@ name: hourly
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "17 * * * *"   # 毎時 17 分（0 分は混んで遅れるのでずらす）
   workflow_dispatch:
   push:
     branches: [main]
