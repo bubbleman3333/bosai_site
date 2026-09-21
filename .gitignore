@@ -1,0 +1,7 @@
+.venv/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+# 警報と予報は毎回取り直すので履歴に積まない（積むのは data/quakes と data/history）
+data/current/

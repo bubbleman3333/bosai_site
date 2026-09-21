@@ -1,0 +1,8 @@
+{
+  "name": "防災ウォッチ",
+  "tagline": "いま警報が出ている都道府県が一目で分かる",
+  "description": "気象庁の公開データから、いま出ている警報・注意報、今日と明日の天気、最近の地震を 1 時間ごとに自動でまとめています。47 都道府県ぶんのページを毎日更新。",
+  "site_url": "https://bubbleman3333.github.io/bosai_site",
+  "source_name": "気象庁",
+  "source_url": "https://www.jma.go.jp/bosai/"
+}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ title }} | {{ site.name }}{% endblock %}</title>
+<meta name="description" content="{% block description %}{{ description }}{% endblock %}">
+{% if noindex %}<meta name="robots" content="noindex">{% endif %}
+<link rel="canonical" href="{{ canonical }}">
+<link rel="alternate" type="application/rss+xml" title="{{ site.name }}（警報・地震）" href="{{ url('feed.xml') }}">
+<link rel="stylesheet" href="{{ url('static/style.css') }}">
+<link rel="icon" href="{{ url('static/favicon.svg') }}" type="image/svg+xml">
+<meta property="og:site_name" content="{{ site.name }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ self.title() }}">
+<meta property="og:description" content="{{ self.description() }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:image" content="{{ url('static/og.png') }}">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }},
+ "description":{{ site.description|tojson }},"inLanguage":"ja",
+ "publisher":{"@type":"Organization","name":{{ site.name|tojson }}}}
+</script>
+{% if breadcrumb_json %}<script type="application/ld+json">{{ breadcrumb_json|safe }}</script>{% endif %}
+{% block head %}{% endblock %}
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="{{ url() }}">防災<span>ウォッチ</span></a>
+    <nav>
+      <a href="{{ url('area/') }}">都道府県</a>
+      <a href="{{ url('quake/') }}">最近の地震</a>
+      <a href="{{ url('quake/strong/') }}">震度4以上</a>
+      <a href="{{ url('ranking/') }}">警報回数ランキング</a>
+      <a href="{{ url('about/') }}">このサイトについて</a>
+    </nav>
+  </div>
+</header>
+{% if nav_alerting %}
+<div class="alert-bar">
+  <div class="wrap">いま警報が出ています:
+    {% for p in nav_alerting %}<a href="{{ url(p.path) }}">{{ p.name }}</a>{% if not loop.last %} / {% endif %}{% endfor %}
+  </div>
+</div>
+{% endif %}
+<div class="wrap layout">
+  <main class="content">
+    {% if crumbs %}<nav class="crumbs"><a href="{{ url() }}">ホーム</a>{% for name, path in crumbs %} › {% if path %}<a href="{{ url(path) }}">{{ name }}</a>{% else %}{{ name }}{% endif %}{% endfor %}</nav>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <aside class="sidebar">
+    <section class="box">
+      <h2>いまの状況</h2>
+      {% if nav_alerting %}
+      <p class="small"><strong>{{ nav_alerting|length }} 都道府県</strong>に警報が出ています。</p>
+      <ul class="compact">
+        {% for p in nav_alerting %}<li><a href="{{ url(p.path) }}">{{ p.name }}</a><span class="meta">{{ p.summary }}</span></li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="small">警報が出ている都道府県はありません。注意報は {{ footer_stats.advising }} 都道府県で出ています。</p>
+      {% endif %}
+      <a class="more" href="{{ url() }}">全国の状況を見る</a>
+    </section>
+    <section class="box">
+      <h2>最近の地震</h2>
+      <ul class="compact">
+        {% for q in sidebar_quakes %}
+        <li><a href="{{ url(q.path) }}">{{ q.place or '震源不明' }}</a><span class="meta">{{ q.when|dt }}・{{ q.magnitude_label }}・{{ q.max_int_label }}</span></li>
+        {% endfor %}
+      </ul>
+      <a class="more" href="{{ url('quake/') }}">地震の一覧を見る</a>
+    </section>
+    <section class="box">
+      <h2>都道府県から探す</h2>
+      <div class="chips">
+        {% for p in all_prefs %}<a href="{{ url(p.path) }}">{{ p.name }}</a>{% endfor %}
+      </div>
+    </section>
+    <section class="box">
+      <h2>更新について</h2>
+      <p class="small">1 時間ごとに気象庁の公開データを自動で取り込んでいます。最終更新 {{ footer_stats.updated|dt }}。</p>
+      <p class="small"><a href="{{ url('feed.xml') }}">RSS</a> で、警報の発表と震度 3 以上の地震を受け取れます。</p>
+    </section>
+  </aside>
+</div>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>このサイトのデータはすべて<strong>気象庁</strong>の公開データ（<a href="{{ site.source_url }}" rel="noopener" target="_blank">気象庁 防災情報</a>）を元に、1 時間ごとに自動で作っています。最終更新 {{ footer_stats.updated|dt }}。</p>
+    <p><strong>身の危険を感じたら、このサイトではなく気象庁・自治体の発表と避難指示に従ってください。</strong>掲載内容は取り込んだ時点のもので、遅れや欠けがあることがあります。</p>
+    <p><a href="{{ url('about/') }}">このサイトについて</a> ・ <a href="{{ url('privacy/') }}">プライバシーポリシー</a> ・ <a href="{{ url('feed.xml') }}">RSS</a> ・ <a href="{{ url('sitemap.xml') }}">サイトマップ</a> ・ 地震 {{ footer_stats.quakes }} 件を記録中</p>
+    <p>© {{ now.year }} {{ site.name }}（出典: 気象庁）</p>
+  </div>
+</footer>
+</body>
+</html>

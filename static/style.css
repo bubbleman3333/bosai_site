@@ -1,0 +1,160 @@
+/* 防災ウォッチ。色は橙〜赤系。警報の段階（特別警報・警報・注意報）と震度で色を変える。 */
+:root {
+  --ink:#241b18; --muted:#6b5f5a; --line:#ecdfd8; --bg:#fbf6f3; --paper:#fff;
+  --brand:#c2410c; --brand-dark:#9a3412; --brand-soft:#fff1e8;
+  --emergency:#7f1d1d; --warning:#d1410c; --advisory:#b8860b; --calm:#2f7d5a;
+  --i1:#d8d8d8; --i2:#bfe3f5; --i3:#8fd6a8; --i4:#f5d76e; --i5:#f0a04b; --i6:#e2603b; --i7:#8e1b1b;
+}
+* { box-sizing:border-box; }
+html { font-size:16px; }
+body { margin:0; font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+  color:var(--ink); background:var(--bg); line-height:1.75; }
+a { color:var(--brand); }
+a:hover { color:var(--brand-dark); }
+.wrap { max-width:1120px; margin:0 auto; padding:0 16px; }
+.skip { position:absolute; left:-9999px; }
+
+/* ---- 枠組み ---- */
+.site-header { background:var(--paper); border-bottom:3px solid var(--brand); }
+.site-header .wrap { display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding-top:12px; padding-bottom:12px; }
+.brand { font-weight:700; font-size:1.3rem; text-decoration:none; color:var(--ink); }
+.brand span { color:var(--brand); }
+.site-header nav { display:flex; gap:4px; flex-wrap:wrap; }
+.site-header nav a { text-decoration:none; padding:6px 10px; border-radius:6px; color:var(--ink); font-size:.95rem; }
+.site-header nav a:hover { background:var(--brand-soft); }
+.alert-bar { background:var(--emergency); color:#fff; font-weight:600; }
+.alert-bar .wrap { padding-top:8px; padding-bottom:8px; font-size:.95rem; }
+.alert-bar a { color:#ffe4d6; }
+.layout { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:28px; padding-top:24px; padding-bottom:40px; }
+.content { min-width:0; }
+.sidebar .box { background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:18px; }
+.sidebar h2 { font-size:1rem; margin:0 0 8px; border:none; padding:0; }
+.site-footer { border-top:1px solid var(--line); background:var(--paper); font-size:.85rem; color:var(--muted); padding:24px 0; }
+.site-footer a { color:var(--brand-dark); }
+
+/* ---- 文字 ---- */
+h1 { font-size:1.6rem; line-height:1.4; margin:8px 0 12px; }
+h2 { font-size:1.2rem; margin:32px 0 12px; padding-left:10px; border-left:4px solid var(--brand); }
+h3 { font-size:1.05rem; margin:22px 0 8px; }
+.lead { color:var(--muted); }
+.crumbs { font-size:.85rem; color:var(--muted); }
+.crumbs a { color:var(--muted); }
+.small { font-size:.85rem; color:var(--muted); }
+.source { font-size:.8rem; color:var(--muted); margin-top:6px; }
+
+/* ---- トップの大きな見出し ---- */
+.hero { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:20px 24px; }
+.hero h1 { margin-top:0; font-size:1.9rem; }
+.stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0 0; }
+.stat { background:var(--bg); border-radius:10px; padding:12px; text-align:center; }
+.stat strong { display:block; font-size:1.8rem; color:var(--brand); line-height:1.2; }
+.stat span { font-size:.8rem; color:var(--muted); }
+.hero-actions { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 0; }
+.button { display:inline-block; background:var(--brand); color:#fff !important; text-decoration:none; padding:11px 20px; border-radius:8px; font-weight:600; }
+.button:hover { background:var(--brand-dark); }
+.button.ghost { background:var(--paper); color:var(--brand) !important; border:1px solid var(--brand); }
+.button.ghost:hover { background:var(--brand-soft); }
+
+/* ---- 「いま警報が出ている」表示 ---- */
+.status-panel { border-radius:12px; padding:18px 22px; margin:18px 0; border:1px solid var(--line); background:var(--paper); }
+.status-panel.calm { border-color:var(--calm); background:#f2faf6; }
+.status-panel.alert { border-color:var(--emergency); background:#fff5f4; }
+.status-panel h2 { margin:0 0 10px; border:none; padding:0; font-size:1.25rem; }
+.status-panel.calm h2 { color:var(--calm); }
+.status-panel.alert h2 { color:var(--emergency); }
+.alert-grid { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; }
+.alert-card { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--paper); border-left-width:6px; }
+.alert-card.emergency { border-left-color:var(--emergency); }
+.alert-card.warning { border-left-color:var(--warning); }
+.alert-card.advisory { border-left-color:var(--advisory); }
+.alert-card a { font-weight:700; text-decoration:none; font-size:1.05rem; color:var(--ink); }
+.alert-card a:hover { color:var(--brand); }
+.alert-card p { margin:4px 0 0; font-size:.85rem; color:var(--muted); }
+
+/* ---- 警報のバッジ ---- */
+.tag { display:inline-block; font-size:.78rem; font-weight:700; padding:1px 9px; border-radius:999px; color:#fff; background:var(--muted); white-space:nowrap; }
+.tag.emergency { background:var(--emergency); }
+.tag.warning { background:var(--warning); }
+.tag.advisory { background:var(--advisory); }
+.tag.calm { background:var(--calm); }
+.tags { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 0; padding:0; list-style:none; }
+
+.warn-list { list-style:none; margin:0; padding:0; }
+.warn-list li { display:flex; gap:12px; align-items:flex-start; padding:10px 12px; border:1px solid var(--line); border-left-width:6px; border-radius:8px; background:var(--paper); margin-bottom:8px; }
+.warn-list li.emergency { border-left-color:var(--emergency); }
+.warn-list li.warning { border-left-color:var(--warning); }
+.warn-list li.advisory { border-left-color:var(--advisory); }
+.warn-list .name { font-weight:700; white-space:nowrap; }
+.warn-list .areas { font-size:.88rem; color:var(--muted); }
+.headline { background:var(--brand-soft); border:1px solid var(--line); border-left:6px solid var(--brand); border-radius:8px; padding:12px 16px; margin:14px 0; }
+
+/* ---- 天気 ---- */
+.fc-area { background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin-bottom:14px; }
+.fc-area h3 { margin:0 0 8px; }
+.fc-days { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
+.fc-day { background:var(--bg); border-radius:8px; padding:10px 12px; }
+.fc-day .d { font-size:.85rem; color:var(--muted); }
+.fc-day .icon { font-size:1.8rem; line-height:1.2; }
+.fc-day .w { font-size:.9rem; }
+.fc-day .pop { font-size:.85rem; color:var(--brand-dark); font-weight:700; }
+.pop-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.pop-row span { font-size:.78rem; background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:1px 6px; }
+
+/* ---- 表 ---- */
+.scroll-x { overflow-x:auto; }        /* 週間予報など横に長い表は、ページごと横に伸びないよう中だけ動かす */
+table.grid { width:100%; border-collapse:collapse; background:var(--paper); border:1px solid var(--line); border-radius:10px; overflow:hidden; margin:14px 0; font-size:.93rem; }
+table.grid th, table.grid td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+table.grid thead th { background:var(--brand-soft); font-weight:700; white-space:nowrap; }
+table.grid tr:last-child td { border-bottom:none; }
+.facts { width:100%; border-collapse:collapse; background:var(--paper); border:1px solid var(--line); border-radius:10px; overflow:hidden; margin:16px 0; }
+.facts th, .facts td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+.facts th { width:9em; background:var(--brand-soft); font-weight:600; white-space:nowrap; }
+.facts tr:last-child th, .facts tr:last-child td { border-bottom:none; }
+
+/* ---- 震度 ---- */
+.shindo { display:inline-block; min-width:3.4em; text-align:center; font-weight:700; font-size:.82rem; padding:1px 8px; border-radius:6px; color:var(--ink); background:var(--i1); white-space:nowrap; }
+.shindo.i0 { background:var(--i1); }
+.shindo.i1 { background:var(--i2); }
+.shindo.i2 { background:var(--i3); }
+.shindo.i3 { background:var(--i4); }
+.shindo.i4, .shindo.i5 { background:var(--i5); }
+.shindo.i6, .shindo.i7 { background:var(--i6); color:#fff; }
+.shindo.i8 { background:var(--i7); color:#fff; }
+.shindo.i-none { background:var(--bg); color:var(--muted); }
+.big-shindo { font-size:1.4rem; min-width:4.2em; padding:6px 14px; }
+.quake-list { list-style:none; margin:0; padding:0; }
+.quake-list li { display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:8px; }
+.quake-list .t { font-size:.85rem; color:var(--muted); white-space:nowrap; }
+.quake-list .p { font-weight:600; text-decoration:none; }
+.quake-list .m { font-size:.85rem; color:var(--muted); }
+.city-list { display:flex; flex-wrap:wrap; gap:6px; list-style:none; margin:6px 0 0; padding:0; }
+.city-list li { font-size:.85rem; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:1px 8px; }
+
+/* ---- 都道府県の入口 ---- */
+.region { margin-bottom:18px; }
+.region h3 { margin:0 0 8px; font-size:1rem; color:var(--muted); }
+.pref-grid { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+.pref-grid a { display:block; text-decoration:none; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-left-width:5px; border-left-color:var(--line); border-radius:8px; padding:8px 10px; font-size:.95rem; }
+.pref-grid a:hover { background:var(--brand-soft); }
+.pref-grid a.emergency { border-left-color:var(--emergency); }
+.pref-grid a.warning { border-left-color:var(--warning); }
+.pref-grid a.advisory { border-left-color:var(--advisory); }
+.pref-grid a.calm { border-left-color:var(--calm); }
+.pref-grid small { display:block; color:var(--muted); font-size:.75rem; line-height:1.5; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; }
+.chips a { text-decoration:none; font-size:.85rem; background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:3px 10px; color:var(--ink); }
+.compact { list-style:none; margin:0; padding:0; }
+.compact li { padding:6px 0; border-bottom:1px solid var(--line); font-size:.9rem; }
+.compact li:last-child { border-bottom:none; }
+.compact .meta { display:block; font-size:.8rem; color:var(--muted); }
+.more { display:inline-block; margin-top:10px; font-size:.9rem; }
+.page-body { background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:8px 22px 20px; }
+.note { background:var(--brand-soft); border-radius:8px; padding:12px 16px; font-size:.9rem; }
+
+@media (max-width:860px) {
+  .layout { grid-template-columns:1fr; }
+  .stat-row { grid-template-columns:repeat(2,1fr); }
+  h1 { font-size:1.35rem; }
+  .hero { padding:16px; }
+  .facts th { width:7em; }
+}

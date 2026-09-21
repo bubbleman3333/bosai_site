@@ -1,0 +1,68 @@
+# 1 時間ごとに気象庁から取り込み、サイトを生成して GitHub Pages に配信する。
+# main に push したときは生成だけ走る（取り込みが push を呼んで無限ループになるのを防ぐ）。
+name: hourly
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: 気象庁から取り込む
+        run: python -m bosai fetch
+
+      - name: 積み上がったデータをコミット
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/quakes data/history
+          if git diff --cached --quiet; then
+            echo "変更なし"
+          else
+            git commit -m "データ更新 $(date -u +'%Y-%m-%d %H:%M') [skip ci]"
+            git pull --rebase
+            git push
+          fi
+
+      - name: テスト
+        run: python -m pytest -q
+
+      - name: サイト生成
+        run: python -m bosai build --site-url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

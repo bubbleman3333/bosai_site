@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},
+ "description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+<h1>都道府県から見る</h1>
+<p class="lead">47 都道府県それぞれの「いま出ている警報・注意報」「今日と明日の天気と降水確率」「直近の地震」をまとめたページです。左の色の帯が、特別警報（濃い赤）・警報（橙）・注意報（黄）・発表なし（緑）を表します。</p>
+{% for region, codes in REGIONS %}
+<div class="region">
+  <h3>{{ region }}</h3>
+  <ul class="pref-grid">
+    {% for code in codes %}{% set p = by_code[code] %}
+    <li><a class="{{ p.top_level or 'calm' }}" href="{{ url(p.path) }}">{{ p.name }}
+      <small>{% if p.items %}{{ p.items|map(attribute='name')|join('、') }}{% else %}発表なし{% endif %}</small></a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endfor %}
+<p class="source">出典: 気象庁「気象警報・注意報」「天気予報」。</p>
+{% endblock %}

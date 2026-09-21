@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ site.name }} | {{ site.tagline }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ site.name|tojson }},
+ "description":{{ site.description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>いま、日本のどこに警報が出ている？</h1>
+  <p class="lead">気象庁の公開データから、警報・注意報と今日明日の天気、最近の地震を 1 時間ごとに自動でまとめています。</p>
+  <div class="stat-row">
+    <div class="stat"><strong>{{ alerting|length }}</strong><span>都道府県に警報</span></div>
+    <div class="stat"><strong>{{ advising|length }}</strong><span>都道府県に注意報</span></div>
+    <div class="stat"><strong>{{ quiet|length }}</strong><span>都道府県は発表なし</span></div>
+    <div class="stat"><strong>{{ strong_month|length }}</strong><span>今月の震度4以上</span></div>
+  </div>
+  <p class="hero-actions"><a class="button" href="{{ url('area/') }}">都道府県のページを見る</a> <a class="button ghost" href="{{ url('quake/') }}">最近の地震を見る</a></p>
+</section>
+
+{% if alerting %}
+<section class="status-panel alert">
+  <h2>いま警報が出ている都道府県（{{ alerting|length }}）</h2>
+  <ul class="alert-grid">
+    {% for p in alerting %}
+    <li class="alert-card {{ p.top_level }}">
+      <a href="{{ url(p.path) }}">{{ p.name }}</a>
+      <ul class="tags">
+        {% for w in p.emergencies + p.warnings %}<li><span class="tag {{ w.level }}">{{ w.name }}</span></li>{% endfor %}
+      </ul>
+      <p>{{ (p.emergencies + p.warnings)[0].areas|join('、') }}{% if p.advisories %}／ほかに注意報 {{ p.advisories|length }} 件{% endif %}</p>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% else %}
+<section class="status-panel calm">
+  <h2>いま警報が出ている都道府県はありません</h2>
+  <p>全国 47 都道府県のいずれにも、気象の警報・特別警報は発表されていません{% if advising %}（注意報は {{ advising|length }} 都道府県で出ています）{% endif %}。</p>
+</section>
+{% endif %}
+
+{% if advising %}
+<section>
+  <h2>注意報が出ている都道府県（{{ advising|length }}）</h2>
+  <ul class="alert-grid">
+    {% for p in advising %}
+    <li class="alert-card advisory">
+      <a href="{{ url(p.path) }}">{{ p.name }}</a>
+      <ul class="tags">{% for w in p.advisories %}<li><span class="tag advisory">{{ w.name }}</span></li>{% endfor %}</ul>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section>
+  <h2>最近の地震</h2>
+  <ul class="quake-list">
+    {% for q in quakes %}
+    <li>
+      <span class="shindo {{ intensity_class(q.max_int) }}">{{ q.max_int_label }}</span>
+      <a class="p" href="{{ url(q.path) }}">{{ q.place or '震源不明' }}</a>
+      <span class="t">{{ q.when|dt }}</span>
+      <span class="m">{{ q.magnitude_label }}・深さ{{ q.depth_label }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  <a class="more" href="{{ url('quake/') }}">地震の一覧（最近 100 件）へ</a>
+</section>
+
+<section>
+  <h2>震度4以上の地震まとめ（{{ this_month[:4] }}年{{ this_month[5:]|int }}月）</h2>
+  {% if strong_month %}
+  <ul class="quake-list">
+    {% for q in strong_month %}
+    <li>
+      <span class="shindo {{ intensity_class(q.max_int) }}">{{ q.max_int_label }}</span>
+      <a class="p" href="{{ url(q.path) }}">{{ q.place or '震源不明' }}</a>
+      <span class="t">{{ q.when|dt }}</span>
+      <span class="m">{{ q.magnitude_label }}・{{ q.affected_prefs()|join('、') }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>今月はまだ震度4以上の地震を観測していません。</p>
+  {% endif %}
+  <a class="more" href="{{ url('quake/strong/') }}">月ごとのまとめを見る</a>
+</section>
+
+<section>
+  <h2>警報が出た回数の都道府県ランキング</h2>
+  <p class="lead">当サイトが 1 時間ごとに記録した{{ stats.days }}日分の観測から、警報が出ていた日を数えたものです。</p>
+  <table class="grid">
+    <thead><tr><th>順位</th><th>都道府県</th><th>警報が出た日</th><th>注意報が出た日</th></tr></thead>
+    <tbody>
+      {% for r in ranking %}
+      <tr><td>{{ loop.index }}</td><td><a href="{{ url('area/' ~ r.slug ~ '/') }}">{{ r.name }}</a></td>
+          <td>{{ r.warning_days }} 日</td><td>{{ r.advisory_days }} 日</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <a class="more" href="{{ url('ranking/') }}">47 都道府県すべてのランキングを見る</a>
+</section>
+
+<section>
+  <h2>都道府県から見る</h2>
+  {% for region, codes in REGIONS %}
+  <div class="region">
+    <h3>{{ region }}</h3>
+    <ul class="pref-grid">
+      {% for code in codes %}{% set p = by_code[code] %}
+      <li><a class="{{ p.top_level or 'calm' }}" href="{{ url(p.path) }}">{{ p.name }}
+        <small>{% if p.items %}{{ p.items[0].name }}{% if p.items|length > 1 %} ほか{{ p.items|length - 1 }}件{% endif %}{% else %}発表なし{% endif %}</small></a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+</section>
+
+<section>
+  <h2>このサイトの見方</h2>
+  <div class="note">
+    <ol>
+      <li><strong>赤い帯</strong>が出ていたら、どこかに警報が出ています。都道府県名をたどると、どの区域に何の警報かが分かります。</li>
+      <li>都道府県のページでは、警報・注意報のほかに<strong>今日と明日の天気・降水確率</strong>と、<strong>その県で揺れた直近の地震</strong>が見られます。</li>
+      <li><a href="{{ url('feed.xml') }}">RSS</a> を登録すると、警報の発表と震度 3 以上の地震が届きます。</li>
+    </ol>
+    <p class="source">出典: 気象庁。避難の判断は必ず気象庁・自治体の発表に従ってください。</p>
+  </div>
+</section>
+{% endblock %}

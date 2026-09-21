@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},
+ "description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+<h1>{{ q.when|dt }}　{{ q.place or '震源不明' }}の地震</h1>
+<p class="lead">
+  <span class="shindo big-shindo {{ intensity_class(q.max_int) }}">{{ q.max_int_label }}</span>
+  {{ q.magnitude_label }}・深さ{{ q.depth_label }}。気象庁の「{{ q.kind }}」による情報です。
+</p>
+
+<table class="facts">
+  <tr><th>発生時刻</th><td>{{ q.origin|dt }}</td></tr>
+  <tr><th>発表時刻</th><td>{{ q.report|dt }}</td></tr>
+  <tr><th>震源</th><td>{{ q.place or '不明' }}{% if q.lat is not none %}（北緯 {{ q.lat }}度・東経 {{ q.lon }}度）{% endif %}</td></tr>
+  <tr><th>規模</th><td>{{ q.magnitude_label }}</td></tr>
+  <tr><th>深さ</th><td>{{ q.depth_label }}</td></tr>
+  <tr><th>最大震度</th><td>{{ q.max_int_label }}</td></tr>
+  <tr><th>情報の種類</th><td>{{ q.kind }}</td></tr>
+</table>
+
+{% if q.comment %}<div class="headline">{{ q.comment }}</div>{% endif %}
+
+<section>
+  <h2>各地の震度</h2>
+  {% if q.prefs %}
+    {% for p in q.prefs %}
+    <div class="fc-area">
+      <h3>{{ p.name }}　<span class="shindo {{ intensity_class(p.max_int) }}">{{ intensity_label(p.max_int) }}</span></h3>
+      <ul class="city-list">
+        {% for name, value in p.cities %}
+        <li><span class="shindo {{ intensity_class(value) }}">{{ intensity_label(value) }}</span> {{ name }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+    <p class="source">出典: 気象庁。市区町村ごとの最大震度です。</p>
+  {% else %}
+    <p>震度の観測情報は発表されていません（震源だけの情報、または日本国内で震度を観測しなかった地震です）。</p>
+  {% endif %}
+</section>
+
+{% if q.prefs %}
+<section>
+  <h2>この地震で揺れた都道府県のページ</h2>
+  <div class="chips">
+    {% for o in all_prefs %}{% if o.name in q.affected_prefs() %}<a href="{{ url(o.path) }}">{{ o.name }}の警報・天気</a>{% endif %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section>
+  <h2>ほかの地震</h2>
+  <ul class="quake-list">
+    {% for r in related %}
+    <li>
+      <span class="shindo {{ intensity_class(r.max_int) }}">{{ r.max_int_label }}</span>
+      <a class="p" href="{{ url(r.path) }}">{{ r.place or '震源不明' }}</a>
+      <span class="t">{{ r.when|dt }}</span>
+      <span class="m">{{ r.magnitude_label }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  <a class="more" href="{{ url('quake/') }}">地震の一覧へ</a>
+</section>
+{% endblock %}

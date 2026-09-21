@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},
+ "description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+<h1>警報が出た回数の都道府県ランキング</h1>
+<p class="lead">当サイトは 1 時間ごとに気象庁の警報・注意報を見に行き、その日に出ていたものを記録しています。このランキングは<strong>その記録の積み重ね</strong>で、気象庁の公式統計ではありません。</p>
+<div class="note">
+  記録した期間: {% if stats.first %}{{ stats.first }} 〜 {{ stats.last }}（{{ stats.days }} 日分）{% else %}まだ記録がありません{% endif %}。
+  「警報が出た日」は、その日のどこかの時点で警報または特別警報が出ていた日を 1 日と数えたものです。
+</div>
+
+{% if stats.ranking %}
+<table class="grid">
+  <thead><tr><th>順位</th><th>都道府県</th><th>警報が出た日</th><th>注意報が出た日</th><th>多かった種類</th></tr></thead>
+  <tbody>
+  {% for r in stats.ranking %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><a href="{{ url('area/' ~ r.slug ~ '/') }}">{{ r.name }}</a></td>
+      <td>{{ r.warning_days }} 日</td>
+      <td>{{ r.advisory_days }} 日</td>
+      <td>{% for c in r.top_codes %}<span class="tag {{ warning_level(c) }}">{{ warning_name(c) }}</span> {% endfor %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>まだ記録がありません。1 時間ごとの取り込みが動き出すと、ここに積み上がっていきます。</p>
+{% endif %}
+
+{% if stats.code_days %}
+<h2>種類ごとに「どこかで出ていた日数」</h2>
+<table class="grid">
+  <thead><tr><th>警報・注意報</th><th>段階</th><th>日数</th></tr></thead>
+  <tbody>
+  {% for code, n in stats.code_days %}
+    <tr><td>{{ warning_name(code) }}</td><td><span class="tag {{ warning_level(code) }}">{{ LEVEL_LABEL[warning_level(code)] }}</span></td><td>{{ n }} 日</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+<p class="source">出典: 気象庁「気象警報・注意報」を当サイトが 1 時間ごとに観測して集計。</p>
+{% endblock %}

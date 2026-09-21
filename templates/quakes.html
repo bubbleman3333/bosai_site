@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},
+ "description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="lead">{{ description }}</p>
+{% if items %}
+<div class="scroll-x"><table class="grid">
+  <thead><tr><th>発生時刻</th><th>最大震度</th><th>震源</th><th>規模</th><th>深さ</th><th>震度を観測した都道府県</th></tr></thead>
+  <tbody>
+  {% for q in items %}
+    <tr>
+      <td><a href="{{ url(q.path) }}">{{ q.when|dt }}</a></td>
+      <td><span class="shindo {{ intensity_class(q.max_int) }}">{{ q.max_int_label }}</span></td>
+      <td><a href="{{ url(q.path) }}">{{ q.place or '震源不明' }}</a></td>
+      <td>{{ q.magnitude_label }}</td>
+      <td>{{ q.depth_label }}</td>
+      <td class="small">{{ q.affected_prefs()|join('、') or '―' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p>該当する地震はありません。</p>
+{% endif %}
+<p class="source">出典: 気象庁「地震情報」。震度速報など、震源がまだ決まっていない段階の発表も含みます。</p>
+{% endblock %}

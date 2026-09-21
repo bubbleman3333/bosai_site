@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},
+ "description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="lead">{{ description }}震度4は「歩いている人のほとんどが揺れを感じ、眠っている人のほとんどが目を覚ます」程度の揺れです。</p>
+{% if rows %}
+<table class="grid">
+  <thead><tr><th>月</th><th>件数</th></tr></thead>
+  <tbody>
+    {% for m, n in rows %}
+    <tr><td><a href="{{ url('quake/strong/' ~ m ~ '/') }}">{{ m[:4] }}年{{ m[5:]|int }}月</a></td><td>{{ n }} 件</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>まだ震度4以上の地震を記録していません。</p>
+{% endif %}
+<p class="source">出典: 気象庁「地震情報」。</p>
+{% endblock %}

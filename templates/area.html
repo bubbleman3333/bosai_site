@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},
+ "description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+<h1>{{ p.name }}の警報・注意報と天気</h1>
+<p class="lead">{{ p.name }}にいま出ている警報・注意報、今日と明日の天気・降水確率、直近の地震です。気象庁の公開データから 1 時間ごとに自動更新しています。</p>
+
+{% if p.items %}
+<section class="status-panel {{ 'alert' if p.has_warning else '' }}">
+  <h2>{% if p.has_warning %}{{ p.name }}に警報が出ています{% else %}{{ p.name }}に注意報が出ています{% endif %}</h2>
+  <ul class="warn-list">
+    {% for w in p.items %}
+    <li class="{{ w.level }}">
+      <span class="tag {{ w.level }}">{{ w.level_label }}</span>
+      <span class="name">{{ w.name }}</span>
+      <span class="areas">{{ w.areas|join('、') }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% for h in p.headlines %}<div class="headline">{{ h }}</div>{% endfor %}
+  <p class="source">気象庁の発表 {{ p.report|dt }}。区域は一次細分区域（天気予報の区分）で示しています。</p>
+</section>
+{% else %}
+<section class="status-panel calm">
+  <h2>{{ p.name }}に発表中の警報・注意報はありません</h2>
+  <p>気象庁の発表 {{ p.report|dt }} の時点で、{{ p.name }}には警報・注意報のどちらも出ていません。</p>
+</section>
+{% endif %}
+
+<section>
+  <h2>今日からの天気と降水確率</h2>
+  {% if forecasts %}
+    {% for fc in forecasts %}
+      {% for a in fc.areas %}
+      <div class="fc-area">
+        <h3>{{ a.name }}</h3>
+        <div class="fc-days">
+          {% for d in a.days[:3] %}
+          <div class="fc-day">
+            <div class="d">{{ d.date|day }}</div>
+            <div class="icon">{{ weather_icon(d.weather, d.code) }}</div>
+            <div class="w">{{ d.weather|replace('　', ' ') }}</div>
+            {% if d.pop_max is not none %}<div class="pop">降水確率 最大 {{ d.pop_max }}%</div>{% endif %}
+            {# r.pop と書くと辞書の pop メソッドが取れてしまうので添字で読む #}
+            {% if d.pops %}<div class="pop-row">{% for r in d.pops %}<span>{{ r['hour'] }}時 {{ r['pop'] }}%</span>{% endfor %}</div>{% endif %}
+            {% if d.wind %}<div class="small">風: {{ d.wind|replace('　', ' ') }}</div>{% endif %}
+            {% if d.wave %}<div class="small">波: {{ d.wave|replace('　', ' ') }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% if fc.temps %}
+      <div class="scroll-x"><table class="grid">
+        <thead><tr><th>気温の予想</th>{% for r in fc.temps[0].rows %}<th>{{ r.date|day }} {{ r.hour }}時</th>{% endfor %}</tr></thead>
+        <tbody>{% for t in fc.temps %}<tr><td>{{ t.name }}</td>{% for r in t.rows %}<td>{{ r.temp }}℃</td>{% endfor %}</tr>{% endfor %}</tbody>
+      </table></div>
+      {% endif %}
+      {% if fc.weekly %}
+      <h3>{{ fc.office_name }}の週間予報</h3>
+      <div class="scroll-x"><table class="grid">
+        <thead><tr><th>区域</th>{% for r in fc.weekly[0].rows %}<th>{{ r.date|day }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for a in fc.weekly %}
+          <tr><td>{{ a.name }}</td>{% for r in a.rows %}<td>{{ weather_icon(none, r['code']) }} {{ weather_from_code(r['code']) }}{% if r['pop'] %}<br><span class="small">{{ r['pop'] }}%</span>{% endif %}</td>{% endfor %}</tr>
+        {% endfor %}
+        {% for t in fc.weekly_temps %}
+          <tr><td>{{ t.name }}の気温</td>{% for r in t.rows %}<td>{% if r['max'] %}{{ r['min'] }}/{{ r['max'] }}℃{% else %}―{% endif %}</td>{% endfor %}</tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% endif %}
+    {% endfor %}
+    <p class="source">出典: 気象庁「天気予報」。</p>
+  {% else %}
+    <p>予報データを取得できていません。</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>{{ p.name }}で震度を観測した直近の地震</h2>
+  {% if quakes %}
+  <ul class="quake-list">
+    {% for q in quakes %}
+    <li>
+      <span class="shindo {{ intensity_class(q.max_int) }}">{{ q.max_int_label }}</span>
+      <a class="p" href="{{ url(q.path) }}">{{ q.place or '震源不明' }}</a>
+      <span class="t">{{ q.when|dt }}</span>
+      <span class="m">{{ q.magnitude_label }}・深さ{{ q.depth_label }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>当サイトが記録している範囲では、{{ p.name }}で震度を観測した地震はありません。</p>
+  {% endif %}
+  <a class="more" href="{{ url('quake/') }}">全国の地震一覧へ</a>
+</section>
+
+{% if rank %}
+<section>
+  <h2>{{ p.name }}にこれまで出た警報・注意報</h2>
+  <table class="facts">
+    <tr><th>警報が出た日</th><td>{{ rank.warning_days }} 日</td></tr>
+    <tr><th>注意報が出た日</th><td>{{ rank.advisory_days }} 日</td></tr>
+    <tr><th>多い種類</th><td>{% if rank.top_codes %}{% for c in rank.top_codes %}<span class="tag {{ warning_level(c) }}">{{ warning_name(c) }}</span> {% endfor %}{% else %}―{% endif %}</td></tr>
+  </table>
+  <p class="source">当サイトが 1 時間ごとに観測した分の累積です（気象庁の公式統計ではありません）。<a href="{{ url('ranking/') }}">ランキングを見る</a></p>
+</section>
+{% endif %}
+
+<section>
+  <h2>ほかの都道府県</h2>
+  <div class="chips">{% for o in all_prefs %}{% if o.pref != p.pref %}<a href="{{ url(o.path) }}">{{ o.name }}</a>{% endif %}{% endfor %}</div>
+</section>
+{% endblock %}

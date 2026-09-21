@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}ページが見つかりません | {{ site.name }}{% endblock %}
+{% block description %}お探しのページは見つかりませんでした。{% endblock %}
+{% block content %}
+<h1>ページが見つかりません</h1>
+<p class="lead">アドレスが変わったか、もう無いページかもしれません。下から探してみてください。</p>
+<p class="hero-actions">
+  <a class="button" href="{{ url() }}">トップへ</a>
+  <a class="button ghost" href="{{ url('area/') }}">都道府県から見る</a>
+  <a class="button ghost" href="{{ url('quake/') }}">最近の地震</a>
+</p>
+{% endblock %}
