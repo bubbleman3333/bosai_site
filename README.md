@@ -4,7 +4,7 @@
 1 時間ごとに取り込み、静的サイトとして GitHub Pages に配信する。**運用費ゼロ**
 （気象庁の JSON はキー不要、GitHub Actions と Pages は無料枠）。人手は一切入らない。
 
-- 公開先: https://bubbleman3333.github.io/bosai_site/
+- 公開先: https://bosai-watch.rakunowa.workers.dev/
 - 出典はすべて **気象庁**（https://www.jma.go.jp/bosai/ が読んでいるのと同じ公開 JSON）
 
 ## 仕組み
